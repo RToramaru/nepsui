@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Arquivo</title>
+    <!-- Adicione o link para o Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Estilo para a área de drop */
+        #drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        /* Estilo para esconder o texto */
+        .hide-text {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form action="{% url 'visualizar' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div id="drop-area" class="mb-3" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)">
+                        <h4 id="drop-text">Arraste e solte o arquivo aqui ou clique para selecionar o arquivo</h4>
+                        <input type="file" id="fileInput" class="d-none" name="fileInput" >
+                        <div id="file-name"></div> <!-- Div para exibir o nome do arquivo -->
+                    </div>
+                    <input type="submit" name="enviarBtn" class="btn btn-secondary btn-block" id="enviarBtn" value="Enviar">
+                </form>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Adicione o link para o Bootstrap JavaScript e jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Função para lidar com o evento de selecionar arquivos
+        function handleFileSelect(event) {
+            event.preventDefault();
+            var files = event.target.files; // Lista de arquivos selecionados
+            // Verifica se algum arquivo foi selecionado
+            if (files.length > 0) {
+                // Exibe o nome do primeiro arquivo selecionado na div file-name
+                document.getElementById('file-name').innerText = "Arquivo selecionado: " + files[0].name;
+                // Esconde o texto de arraste e solte
+                document.getElementById('drop-text').classList.add('hide-text');
+            } else {
+                // Caso nenhum arquivo seja selecionado, limpa o conteúdo da div file-name
+                document.getElementById('file-name').innerText = "";
+            }
+            // Aqui você pode fazer algo com os arquivos selecionados, como enviar para o servidor
+            console.log(files);
+        }
+
+        // Função para lidar com o evento de arrastar e soltar
+        function dropHandler(event) {
+            event.preventDefault();
+            var files = event.dataTransfer.files; // Lista de arquivos arrastados
+            // Verifica se algum arquivo foi arrastado
+            if (files.length > 0) {
+                // Exibe o nome do primeiro arquivo arrastado na div file-name
+                document.getElementById('file-name').innerText = "Arquivo selecionado: " + files[0].name;
+                // Esconde o texto de arraste e solte
+                document.getElementById('drop-text').classList.add('hide-text');
+            } else {
+                // Caso nenhum arquivo seja arrastado, limpa o conteúdo da div file-name
+                document.getElementById('file-name').innerText = "";
+            }
+            // Aqui você pode fazer algo com os arquivos arrastados, como enviar para o servidor
+            console.log(files);
+        }
+
+        // Função para lidar com o evento de arrastar
+        function dragOverHandler(event) {
+            event.preventDefault();
+        }
+
+        // Event listener para o input de arquivo
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+        // Event listener para a área de drop
+        document.getElementById('drop-area').addEventListener('click', function () {
+            document.getElementById('fileInput').click();
+        });
+
+    </script>
+
+</body>
+
+</html>

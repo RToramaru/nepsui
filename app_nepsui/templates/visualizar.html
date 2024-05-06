@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Arquivo</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .hide-text {
+            display: none;
+        }
+
+        #grafico {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="text-center">Visualizar Arquivo</h1>
+
+                <label for="aba" class="text-center">Selecione a aba que deseja visualizar</label>
+                <select name="aba" id="aba" class="form-control">
+                    <option value="Selecione uma balança">Selecione uma balança</option>
+                    {% for aba in nomes_das_abas %}
+                    <option value="{{ aba }}">{{ aba }}</option>
+                    {% endfor %}
+                </select>
+
+                <div id="inputs" class="hide-text">
+                    <label for="quantidadeLeitoes" class="text-center">Informe a quantidade de leitões</label>
+                    <input type="number" id="quantidadeLeitoes" name="quantidadeLeitoes" class="form-control">
+
+                    <div class="form-group row">
+                        <div class="col">
+                            <label for="dataInicio" class="text-center">Data de Início</label>
+                            <input type="date" id="dataInicio" name="dataInicio" class="form-control">
+                        </div>
+                        <div class="col">
+                            <label for="dataFim" class="text-center">Data de Fim</label>
+                            <input type="date" id="dataFim" name="dataFim" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-secondary btn-block" id="consultar">Consultar</button>
+                    </div>
+                </div>
+
+                <div id="grafico" class="hide-text"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loader" class="text-center mt-3 hide-text">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <p>Carregando...</p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            function obterDatasMinMax() {
+                var abaSelecionada = $('#aba').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/obter_datas_min_max/',
+                    data: {
+                        'aba': abaSelecionada,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    },
+                    success: function (data) {
+                        console.log(data);
+
+                        // Define as datas mínima e máxima nos inputs
+                        $('#dataInicio').attr('min', data.min_data);
+                        $('#dataInicio').attr('max', data.max_data);
+                        $('#dataFim').attr('min', data.min_data);
+                        $('#dataFim').attr('max', data.max_data);
+
+                        $('#loader').addClass('hide-text');
+                        $('#inputs').removeClass('hide-text');
+                    }
+                });
+            }
+
+            function exibirGrafico() {
+                var abaSelecionada = $('#aba').val();
+                var dataInicio = $('#dataInicio').val();
+                var dataFim = $('#dataFim').val();
+                var quantidadeLeitoes = $('#quantidadeLeitoes').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/visualizar_grafico/',
+                    data: {
+                        'aba': abaSelecionada,
+                        'dataInicio': dataInicio,
+                        'dataFim': dataFim,
+                        'quantidadeLeitoes': quantidadeLeitoes,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    },
+                    success: function (data) {
+                        console.log(data);
+
+                        // Limpa a div do gráfico
+                        $('#grafico').empty();
+
+                        // Gera um array de datas a partir da data de início até a data de fim
+                        var datas = [];
+                        var dataAtual = new Date(data.dataInicio);
+                        var dataFim = new Date(data.dataFim);
+
+                        while (dataAtual <= dataFim) {
+                            datas.push(dataAtual.toISOString().slice(0, 10));
+                            dataAtual.setDate(dataAtual.getDate() + 1);
+                        }
+                        console.log(datas);
+                        // Cria o gráfico Plotly
+                        var graficoData = [{
+                            x: datas,
+                            y: data.pesoPorca,
+                            type: 'scatter',
+                            mode: 'lines',
+                            name: 'Peso da Porca'
+                        }, {
+                            x: datas,
+                            y: data.pesoLeitoes,
+                            type: 'scatter',
+                            mode: 'lines',
+                            name: 'Peso dos Leitões'
+                        }];
+
+                        var layout = {
+                            title: 'Peso durante o período selecionado',
+                            xaxis: {
+                                title: '',
+                                tickmode: 'array',
+                                tickvals: datas,
+                                ticktext: datas
+                            },
+                            yaxis: {
+                                title: 'Peso'
+                            }
+                        };
+
+                        Plotly.newPlot('grafico', graficoData, layout);
+                        $('#loader').addClass('hide-text');
+                        $('#grafico').removeClass('hide-text');
+                    }
+                });
+            }
+
+
+            $('#consultar').click(function () {
+                $('#loader').removeClass('hide-text');
+                $('#grafico').addClass('hide-text');
+                exibirGrafico();
+            });
+
+            $('#aba').change(function () {
+                $('#loader').removeClass('hide-text');
+
+                $('#inputs').addClass('hide-text');
+                $('#grafico').addClass('hide-text');
+                obterDatasMinMax();
+            });
+        });
+    </script>
+</body>
+
+</html>
