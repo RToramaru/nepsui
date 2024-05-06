@@ -13,6 +13,8 @@ def visualizar(request):
     if request.method == 'POST' and request.FILES['fileInput']:
         arquivo_enviado = request.FILES['fileInput']
         obj, created = ArquivoExcel.objects.get_or_create(id=1)
+        if not created and obj.arquivo:
+            obj.arquivo.delete()
         obj.arquivo.save(arquivo_enviado.name, arquivo_enviado, save=True)
 
         excel_file = pd.ExcelFile(arquivo_enviado)
