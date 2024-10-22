@@ -57,9 +57,22 @@
                         </div>
                     </div>
 
+                    <!-- Campo adicional para a data em que pariu -->
+                    <div class="form-group row">
+                        <div class="col">
+                            <label for="dataParto" class="text-center">Data em que pariu</label>
+                            <input type="date" id="dataParto" name="dataParto" class="form-control">
+                        </div>
+                    </div>
+
                     <div class="text-center mt-3">
                         <button type="button" class="btn btn-secondary btn-block" id="consultar">Consultar</button>
                     </div>
+
+                    <div id="link-planilha" class="text-center mt-3 hide-text">
+                        <a href="#" id="download-planilha">Baixar Planilha</a>
+                    </div>
+
                 </div>
 
                 <div id="grafico" class="hide-text"></div>
@@ -97,6 +110,9 @@
                         $('#dataFim').attr('min', data.min_data);
                         $('#dataFim').attr('max', data.max_data);
 
+                        $('#dataParto').attr('min', data.min_data);
+                        $('#dataParto').attr('max', data.max_data);
+
                         $('#loader').addClass('hide-text');
                         $('#inputs').removeClass('hide-text');
                     }
@@ -108,6 +124,8 @@
                 var dataInicio = $('#dataInicio').val();
                 var dataFim = $('#dataFim').val();
                 var quantidadeLeitoes = $('#quantidadeLeitoes').val();
+                var dataParto = $('#dataParto').val();
+                var gerarPlanilha = true;
 
                 $.ajax({
                     type: 'POST',
@@ -117,6 +135,8 @@
                         'dataInicio': dataInicio,
                         'dataFim': dataFim,
                         'quantidadeLeitoes': quantidadeLeitoes,
+                        'dataParto': dataParto,  // Enviado para o backend
+                        'gerarPlanilha': gerarPlanilha,
                         'csrfmiddlewaretoken': '{{ csrf_token }}',
                     },
                     success: function (data) {
@@ -148,6 +168,12 @@
                             type: 'scatter',
                             mode: 'lines',
                             name: 'Peso dos Leitões'
+                        }, {
+                            x: datas,
+                            y: data.pesoTotal,
+                            type: 'scatter',
+                            mode: 'lines',
+                            name: 'Peso Total'
                         }];
 
                         var layout = {
@@ -163,13 +189,17 @@
                             }
                         };
 
+                        if (data.planilha_download_url) {
+                            $('#link-planilha').removeClass('hide-text');
+
+                            $('#download-planilha').attr('href', data.planilha_download_url);
+                        }
                         Plotly.newPlot('grafico', graficoData, layout);
                         $('#loader').addClass('hide-text');
                         $('#grafico').removeClass('hide-text');
                     }
                 });
             }
-
 
             $('#consultar').click(function () {
                 $('#loader').removeClass('hide-text');
